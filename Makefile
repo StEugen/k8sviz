@@ -1,9 +1,3 @@
-IMAGE ?= mkimuram/k8sviz
-TAG ?= $(shell cat version.txt)
-DEVEL_IMAGE ?= k8sviz
-DEVEL_TAG ?= devel
-TARGET ?= vanilla
-
 test: test-lint test-fmt test-vet test-unit
 	@echo "[Running test]"
 
@@ -34,17 +28,9 @@ test-e2e: build
 build:
 	@echo "[Build]"
 	mkdir -p bin/
-	GO111MODULE=on go build -o bin/k8sviz ./cmd/k8sviz
+	CGO_ENABLED=0 GO111MODULE=on go build -ldflags '-extldflags "-static"' -o bin/k8sviz ./cmd/k8sviz
+	#GO111MODULE=on go build -o bin/k8sviz ./cmd/k8sviz
 
 release: test build test-e2e
-
-image-build:
-	@echo "[Building image $(DEVEL_IMAGE):$(DEVEL_TAG)]"
-	docker build -t $(DEVEL_IMAGE):$(DEVEL_TAG) --target $(TARGET) .
-
-image-push: image-build
-	@echo "[Pushing image $(IMAGE):$(TAG)]"
-	docker tag $(DEVEL_IMAGE):$(DEVEL_TAG) $(IMAGE):$(TAG)
-	docker push $(IMAGE):$(TAG)
 
 .PHONY: test test-lint test-fmt test-vet test-unit test-e2e build release image-build image-push
